@@ -1,4 +1,4 @@
-from .utils import ObjectiveFunction
+from .utils import Function
 
 from enum import StrEnum, auto
 
@@ -34,7 +34,7 @@ class UnconstrainedMinimizer:
         self.f_path: list[float] = []
 
     @staticmethod
-    def __backtracking_wolfe(f: ObjectiveFunction, x_k: np.ndarray, p_k: np.ndarray,
+    def __backtracking_wolfe(f: Function, x_k: np.ndarray, p_k: np.ndarray,
                              rho: float = 0.5, c: float = 0.01) -> float:
         """
         Summary
@@ -68,7 +68,7 @@ class UnconstrainedMinimizer:
         
         return alpha
 
-    def __gradient_descent(self, f: ObjectiveFunction, x0: np.ndarray,
+    def __gradient_descent(self, f: Function, x0: np.ndarray,
                            obj_tol: float = 10e-12, param_tol: float = 10e-8,
                            max_iter: int = 100) -> tuple[np.ndarray, float, bool]:
         x_k = x0.copy()
@@ -103,7 +103,7 @@ class UnconstrainedMinimizer:
         return x_k, f_k, False
 
 
-    def __newtons_method(self, f: ObjectiveFunction, x0: np.ndarray,
+    def __newtons_method(self, f: Function, x0: np.ndarray,
                          obj_tol: float = 10e-12, param_tol: float = 10e-8,
                          max_iter: int = 100) -> tuple[np.ndarray, float, bool]:
         x_k = x0.copy()
@@ -151,7 +151,7 @@ class UnconstrainedMinimizer:
         return x_k, f_k, False
 
 
-    def minimize(self, f: ObjectiveFunction, x0: np.ndarray,
+    def minimize(self, f: Function, x0: np.ndarray,
                  obj_tol: float = 10e-12, param_tol: float = 10e-8,
                  max_iter: int = 100) -> tuple[np.ndarray, float, bool]:
         """

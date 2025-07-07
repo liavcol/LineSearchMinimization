@@ -9,7 +9,7 @@ import numpy as np
 
 class TestExamples(unittest.TestCase):
 
-    def run_example(self, f: utils.ObjectiveFunction, x0: np.ndarray, max_iter: int = 100):
+    def run_example(self, f: utils.Function, x0: np.ndarray, max_iter: int = 100):
         gd_optimizer = UnconstrainedMinimizer(OptimizationMethod.GRADIENT_DESCENT)
         x_opt_gd, f_opt_gd, success_gd = gd_optimizer.minimize(f, x0, max_iter=max_iter)
 

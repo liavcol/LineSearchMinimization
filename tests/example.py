@@ -1,11 +1,11 @@
-from src.utils import ObjectiveFunction
+from src.utils import Function, ConstrainedProblem, NonNegConstraint, LEConstraint
 
 from typing import Optional
 
 import numpy as np
 
 
-class QuadraticCircle(ObjectiveFunction):
+class QuadraticCircle(Function):
     """
     Description
     -----------
@@ -14,15 +14,14 @@ class QuadraticCircle(ObjectiveFunction):
     
     Q = np.eye(2)
 
-    @classmethod
-    def __call__(cls, x: np.ndarray, hessian: bool = False) -> tuple[float, np.ndarray, Optional[np.ndarray]]:            
-        f = x.T @ cls.Q @ x
-        g = 2 * cls.Q @ x
-        H = 2 * cls.Q if hessian else None
-        return f, g, H
+    def __call__(self, x: np.ndarray, hessian: bool = False) -> tuple[np.float64, np.ndarray, Optional[np.ndarray]]:
+        f = x.T @ self.Q @ x
+        g = 2 * self.Q @ x
+        H = 2 * self.Q if hessian else None
+        return f, g, H  # type: ignore
 
 
-class QuadraticEllipse(ObjectiveFunction):
+class QuadraticEllipse(Function):
     """
     Description
     -----------
@@ -31,15 +30,14 @@ class QuadraticEllipse(ObjectiveFunction):
     
     Q = np.diag([1, 100])
 
-    @classmethod
-    def __call__(cls, x: np.ndarray, hessian: bool = False):
-        f = x.T @ cls.Q @ x
-        g = 2 * cls.Q @ x
-        H = 2 * cls.Q if hessian else None
-        return f, g, H
+    def __call__(self, x: np.ndarray, hessian: bool = False) -> tuple[np.float64, np.ndarray, Optional[np.ndarray]]:
+        f = x.T @ self.Q @ x
+        g = 2 * self.Q @ x
+        H = 2 * self.Q if hessian else None
+        return f, g, H  # type: ignore
 
 
-class QuadraticRotatedEllipse(ObjectiveFunction):
+class QuadraticRotatedEllipse(Function):
     """
     Description
     -----------
@@ -51,23 +49,21 @@ class QuadraticRotatedEllipse(ObjectiveFunction):
                   [0.5,      sqrt3_2]])
     Q = R.T @ np.diag([100, 1]) @ R
 
-    @classmethod
-    def __call__(cls, x: np.ndarray, hessian: bool = False):
-        f = x.T @ cls.Q @ x
-        g = 2 * cls.Q @ x
-        H = 2 * cls.Q if hessian else None
-        return f, g, H
+    def __call__(self, x: np.ndarray, hessian: bool = False) -> tuple[np.float64, np.ndarray, Optional[np.ndarray]]:
+        f = x.T @ self.Q @ x
+        g = 2 * self.Q @ x
+        H = 2 * self.Q if hessian else None
+        return f, g, H  # type: ignore
 
 
-class Rosenbrock(ObjectiveFunction):
+class Rosenbrock(Function):
     """
     Description
     -----------
     f(x) = 100*(x2 - x1^2)^2 + (1 - x1)^2.
     """
     
-    @classmethod
-    def __call__(cls, x: np.ndarray, hessian: bool = False):
+    def __call__(self, x: np.ndarray, hessian: bool = False) -> tuple[np.float64, np.ndarray, Optional[np.ndarray]]:
         x1, x2 = x
         f = 100 * (x2 - x1**2)**2 + (1 - x1)**2
         df_dx1 = 400 * (-x2*x1 + x1**3) + 2 * (-1 + x1)
@@ -80,10 +76,10 @@ class Rosenbrock(ObjectiveFunction):
             d2f_dx2dx2 = 200
             H = np.array([[d2f_dx1dx1, d2f_dx1dx2],
                           [d2f_dx1dx2, d2f_dx2dx2]])
-        return f, g, H
+        return f, g, H  # type: ignore
 
 
-class LinearExample(ObjectiveFunction):
+class LinearExample(Function):
     """
     Description
     -----------
@@ -92,23 +88,21 @@ class LinearExample(ObjectiveFunction):
     
     a = np.array([1, -1])
 
-    @classmethod
-    def __call__(cls, x: np.ndarray, hessian: bool = False):
-        f = cls.a @ x
-        g = cls.a.copy()
+    def __call__(self, x: np.ndarray, hessian: bool = False) -> tuple[np.float64, np.ndarray, Optional[np.ndarray]]:
+        f = self.a @ x
+        g = self.a.copy()
         H = np.zeros((2, 2)) if hessian else None
-        return f, g, H
+        return f, g, H  # type: ignore
 
 
-class SmoothedCornerTriangle(ObjectiveFunction):
+class SmoothedCornerTriangle(Function):
     """
     Description
     -----------
     f(x) = exp(x1+3x2-0.1) + exp(x1-3x2-0.1) + exp(-x1-0.1).
     """
     
-    @classmethod
-    def __call__(cls, x: np.ndarray, hessian: bool = False):
+    def __call__(self, x: np.ndarray, hessian: bool = False) -> tuple[np.float64, np.ndarray, Optional[np.ndarray]]:
         x1, x2 = x
         e1 = np.exp(x1 + 3 * x2 - 0.1)
         e2 = np.exp(x1 - 3 * x2 - 0.1)
@@ -124,4 +118,72 @@ class SmoothedCornerTriangle(ObjectiveFunction):
             d2f_dx2dx2 = 9 * e1 + 9 * e2
             H = np.array([[d2f_dx1dx1, d2f_dx1dx2],
                           [d2f_dx1dx2, d2f_dx2dx2]])
-        return f, g, H
+        return f, g, H  # type: ignore
+
+
+class ConstrainedQPExample(ConstrainedProblem):
+    """
+    Description
+    -----------
+    A constrained QP exmaple:
+    min f = x^2 + y^2 + (z + 1)^2
+    s.t.: x + y + z = 1
+          x >= 0, y >= 0, z >= 0
+    """
+    class Func(Function):
+        def __call__(self, x: np.ndarray, hessian: bool = False
+                    ) -> tuple[np.float64, np.ndarray, Optional[np.ndarray]]:
+            x_, y_, z_ = x
+            f = x_**2 + y_**2 + (z_ + 1)**2
+            g = np.array([2 * x_, 2 * y_, 2 * (z_ + 1)])
+            H = np.diag([2, 2, 2]) if hessian else None
+            return f, g, H
+    
+    FUNC = Func()
+    INEQ_CONSTRAINTS = [NonNegConstraint(i) for i in range(3)]
+    EQ_CONSTRAINT_MAT = np.array([[1, 1, 1]])
+    EQ_CONSTRAINT_RHS = np.array([1])
+
+
+class ConstrainedLPExample(ConstrainedProblem):
+    """
+    Description
+    -----------
+    A constrained LP example:
+    max f = x + y
+    s.t.: y >= -x + 1
+          y <= 1, x <= 2, y >= 0 
+    """
+    class Func(Function):
+        """
+        Description
+        -----------
+        max f = x + y -> min f = -x - y
+        """
+        def __call__(self, x: np.ndarray, hessian: bool = False
+                    ) -> tuple[np.float64, np.ndarray, Optional[np.ndarray]]:
+            f = -x[0] - x[1]
+            g = np.array([-1, -1])
+            H = np.zeros((2, 2)) if hessian else None
+            return f, g, H
+    
+    class Constraint(Function):
+        """
+        Description
+        -----------
+        y >= -x + 1 -> -x - y + 1 <= 0
+        """
+        def __call__(self, x: np.ndarray, hessian: bool = False
+                     ) -> tuple[np.float64, np.ndarray, Optional[np.ndarray]]:
+            val = -x[0] - x[1] + 1
+            grad = np.array([-1, -1])
+            H = np.zeros((2, 2)) if hessian else None
+            return val, grad, H
+    
+    FUNC = Func()
+    INEQ_CONSTRAINTS = [
+        Constraint(), LEConstraint(i=1, le_than=1), LEConstraint(i=0, le_than=2), NonNegConstraint(i=1)
+    ]
+    EQ_CONSTRAINT_MAT = np.array([])
+    EQ_CONSTRAINT_RHS = np.array([])
+    
